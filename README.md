@@ -6,7 +6,7 @@ Identifying transitional states is crucial for understanding protein conformatio
 
 ### Illustration
 
-![figure](./docs/figs/fig2.png)
+![figure](./docs/figs/fig1.png)
 
 ## Installation from sources
 
