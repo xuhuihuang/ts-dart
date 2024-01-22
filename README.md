@@ -6,14 +6,14 @@ Identifying transitional states is crucial for understanding protein conformatio
 
 ### Illustration
 
-![figure](./docs/figs/fig2.png)
+![figure](./docs/figs/fig1.png)
 
 ## Installation from sources
 
 The source code can be installed with a local clone:
 
 ```bash
-git clone https://github.com/bojunliu0818/ts-dart.git
+git clone https://github.com/xuhuihuang/ts-dart.git
 ```
 
 ```bash
