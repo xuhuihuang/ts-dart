@@ -14,5 +14,5 @@ python ./ts-dart/scripts/train_tsdart.py \
     --n_epochs 20 \
     --train_split 0.9 \
     --train_batch_size 1000 \
-    --data_directory ./ts-dart/data \
+    --data_directory ./ts-dart/data/quadruple-well \
     --saving_directory . 
