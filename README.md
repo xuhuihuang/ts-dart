@@ -8,9 +8,28 @@ Identifying transitional states is crucial for understanding protein conformatio
 
 ![figure](./docs/figs/fig1.png)
 
+## System requires
+
+The software package can be installed and runned on Linux, Windows, and MacOS (x86_64)
+
+Dependency of Python and Python packages: 
+
+(versions that has been previously tested on are also listed below, other versions should work the same)
+
+```bash
+python == 3.9
+numpy == 1.26.1
+scipy == 1.11.4
+torch == 1.13.1
+tqdm == 4.66.1
+```
+The required python packages with the latest versions will be automatically installed if these python packages are not already present in your local Python environment.
+
 ## Installation from sources
 
 The source code can be installed with a local clone:
+
+The most time-consuming step is the installation of PyTorch (especially cuda version) and the whole installation procedure takes around 5 mins to complete at a local desktop.
 
 ```bash
 git clone https://github.com/xuhuihuang/ts-dart.git
@@ -19,17 +38,24 @@ git clone https://github.com/xuhuihuang/ts-dart.git
 ```bash
 python -m pip install ./ts-dart
 ```
+
 ## Quick start
 
 ### Start with jupyter notebook
 
-Check this file:
+Check these two files for the demo:
+
+```
+./ts-dart/example/muller-example.ipynb
+```
 
 ```
 ./ts-dart/example/quadruple-well-example.ipynb
 ```
 
 ### Start with python script (Linux)
+
+The whole training procedure of the following demo on i9-10900k cpu takes around 30mins to complete at a local desktop.
 
 ```sh
 python ./ts-dart/scripts/train_tsdart.py \
