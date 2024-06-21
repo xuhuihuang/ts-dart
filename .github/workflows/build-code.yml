@@ -24,11 +24,13 @@ jobs:
         shell: bash -el {0}
 
     steps:
-    - uses: actions/checkout@v3
-    - uses: conda-incubator/setup-miniconda@v2
+    - uses: actions/checkout@v4
+    - uses: conda-incubator/setup-miniconda@v3
       with:
+        auto-activate-base: true
         auto-update-conda: true
         python-version: ${{ matrix.python-version }}
+        activate-environment: test
     - name: Install required packages 
       run: |
         python -m pip install --upgrade pip
