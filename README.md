@@ -83,6 +83,14 @@ Or
 sh ./ts-dart/scripts/train_tsdart.sh
 ```
 
+## More instructions 
+
+TS-DART refers to the preprint [10.26434/chemrxiv-2024-r8gjv](https://chemrxiv.org/engage/chemrxiv/article-details/65adf0b966c1381729fb4c11).
+
+We already added the example of Muller potential reported in this preprint to the repo. 
+
+To reproduce the results of the other datasets reported in this preprint, please refer to the Methods section or contact bliu293@wisc.edu.
+
 ## Reference
 
 Our codebase builds heavily on
