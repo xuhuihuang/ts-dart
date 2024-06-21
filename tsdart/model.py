@@ -370,7 +370,7 @@ class TSDARTEstimator:
 
         Returns
         -------
-        TSDARTEstimator
+        self : TSDARTEstimator
         """
 
         states = self._model.transform(data, return_type='states')
