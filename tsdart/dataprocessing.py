@@ -3,6 +3,12 @@ import numpy as np
 class Preprocessing:
 
     def __init__(self, dtype=np.float32):
+        """ Preprocess the original trajectories to create datasets for training.
+
+        Parameters
+        ----------
+        dtype : dtype, default = np.float32
+        """
 
         self._dtype = dtype
 
@@ -17,6 +23,18 @@ class Preprocessing:
         return data
 
     def transform2pw(self, data):
+        """ Transform xyz coordinates data to pairwise distances data.
+
+        Parameters
+        ----------
+        data : list or ndarray
+            xyz coordinates data, shape of each traj [num_frames,num_atoms,3].
+
+        Returns
+        -------
+        pw_data : list or ndarray
+            Pairwise distances data.
+        """
 
         data = self._seq_trajs(data)
 
@@ -38,6 +56,22 @@ class Preprocessing:
         return pw_data if num_trajs > 1 else pw_data[0]
     
     def create_dataset(self, data, lag_time):
+        """ Create the dataset as the input to TS-DART.
+
+        Parameters
+        ----------
+        data : list or ndarray
+            The original trajectories.
+
+        lag_time : int
+            The lag_time used to create the dataset consisting of time-instant and time-lagged data.
+
+        Returns
+        -------
+        dataset : list
+            List of tuples: the length of the list represents the number of data.
+            Each tuple has two elements: one is the instantaneous data frame, the other is the corresponding time-lagged data frame.
+        """
 
         data = self._seq_trajs(data)
 

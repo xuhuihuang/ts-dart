@@ -8,6 +8,20 @@ from .loss import VAMPLoss, DisLoss, Prototypes
 from .utils import map_data
 
 class TSDARTLayer(nn.Module):
+    """ Create TS-DART lobe.
+
+    Parameters
+    ----------
+    layer_sizes : list
+        The size of each layer of the encoder.
+        The last component should represent the dimension of the euclidean space where the latent hypersphere is embedded.
+
+    n_states : int
+        Number of metastable states to be specified. 
+
+    scale : int, default = 1
+        The radius of the hypersphere.
+    """
 
     def __init__(self, layer_sizes:list, n_states:int, scale=1):
         super().__init__()
@@ -39,6 +53,19 @@ class TSDARTLayer(nn.Module):
         return self.probs
 
 class TSDARTModel:
+    """ The TS-DART model from TS-DART.
+
+    Parameters
+    ----------
+    lobe : torch.nn.Module
+        TS-DART lobe.
+
+    device : torch device, default = None
+        The device on which the torch modules are executed.
+
+    dtype : dtype, default = np.float32
+        The data type of the input data and the parameters of the model.
+    """
 
     def __init__(self, lobe, device=None, dtype=np.float32):
 
@@ -56,6 +83,19 @@ class TSDARTModel:
         return self._lobe
 
     def transform(self, data, return_type='probs'):
+        """ Transform the original trajectores to different outputs after training.
+
+        Parameters
+        ----------
+        data : list or ndarray
+            The original trajectories.
+        
+        return_type : string
+            'probs': the softmax probabilties to assign each conformation to a metastable state.
+            'states': the metastable state assignments of each conformation.
+            'hypersphere_embs': the hyperspherical embeddings of each conformation. 
+        """
+
         ### return_type: 'probs' or 'states' 'hypersphere_embs'
         self._lobe.eval()
         net = self._lobe
@@ -78,6 +118,61 @@ class TSDARTModel:
             raise ValueError('Valid return types: probs, states, hypersphere_embs')
 
 class TSDART:
+    """ The method used to train TS-DART.
+
+    Parameters
+    ----------
+    data : list or ndarray
+        The original trajectories.
+    
+    optimizer : str, default = 'Adam'
+        The type of optimizer used for training.
+
+    device : torch.device, default = None
+        The device on which the torch modules are executed.
+
+    learning_rate : float, default = 1e-3
+        The learning rate of the optimizer.
+
+    epsilon : float, default = 1e-6
+        The strength of the regularization/truncation under which matrices are inverted.
+
+    mode : str, default = 'regularize'
+        'regularize': regularize the eigenvalues by adding epsilon.
+        'trunc': truncate the eigenvalues by filtering out the eigenvalues below epsilon.
+
+    symmetrized : boolean, default = False
+        Whether to symmetrize time-correlation matrices or not. 
+
+    dtype : dtype, default = np.float32
+        The data type of the input data and the parameters of the model.
+    
+    feat_dim : int, default = 2
+        The dimension of the euclidean space where the latent hypersphere is embedded.
+        The dimension of latent hypersphere is (feat_dim-1).
+
+    n_states : int, default = 4
+        Number of metastable states to be specified. 
+
+    proto_update_factor : float, default = 0.5
+        The state center update factor.
+
+    scaling_temperature : float, default = 0.1
+        The scaling hyperparameter to compute dispersion loss. 
+
+    beta : float, default = 0.01
+        The weight of dispersion loss.
+
+    save_model_interval : int, default = None
+        Saving the model every 'save_model_interval' epochs.
+
+    pretrain : int, default = 0
+        The number of epochs of the pretraining with pure VAMP2 loss.
+
+    print : boolean, default = False
+        Whether to print the validation loss every epoch during the training. 
+    """
+
     def __init__(self, lobe, optimizer='Adam', device=None, learning_rate=1e-3,
                  epsilon=1e-6, mode='regularize', symmetrized=False, dtype=np.float32, 
                  feat_dim=2, n_states=4, proto_update_factor=0.5, scaling_temperature=0.1, beta=0.01, 
@@ -179,6 +274,26 @@ class TSDART:
         return None
     
     def fit(self, train_loader, n_epochs=1, validation_loader=None, progress=tqdm):
+        """ Performs fit on data.
+
+        Parameters
+        ----------
+        train_loader : torch.utils.data.DataLoader
+            Yield a tuple of batches representing instantaneous and time-lagged samples for training.
+
+        n_epochs : int, default=1
+            The number of epochs to use for training.
+            Note that n_epochs should be larger than pretrain. 
+
+        validation_loader : torch.utils.data.DataLoader, optional, default=None
+             Yield a tuple of batches representing instantaneous and time-lagged samples for validation.
+
+        progress : context manager, default=tqdm
+
+        Returns
+        -------
+        self : TSDART
+        """
 
         for epoch in progress(range(n_epochs), desc="epoch", total=n_epochs, leave=False):
             for batch_0, batch_1 in train_loader:
@@ -216,6 +331,13 @@ class TSDART:
         return TSDARTModel(lobe, device=self._device, dtype=self._dtype)
     
 class TSDARTEstimator:
+    """ The TS-DART estimator the generate the state center vectors and ood scores of original trajectories.
+
+    Parameters
+    ----------
+    tsdart_model : TSDARTModel
+        The trained TS-DART model.
+    """
 
     def __init__(self, tsdart_model: TSDARTModel):
 
@@ -239,6 +361,17 @@ class TSDARTEstimator:
             return self._ood_scores
 
     def fit(self, data):
+        """ Fit the TS-DART model with original trajectories to compute OOD scores and state center vectors.
+
+        Parameters
+        ----------
+        data : list or ndarray
+            The original trajectories.
+
+        Returns
+        -------
+        TSDARTEstimator
+        """
 
         states = self._model.transform(data, return_type='states')
         hypersphere_embs = self._model.transform(data, return_type='hypersphere_embs')

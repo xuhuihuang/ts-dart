@@ -5,6 +5,20 @@ import torch.nn.functional as F
 from .utils import estimate_koopman_matrix
 
 class VAMPLoss(nn.Module):
+    """ Compute VAMP2 loss.
+
+    Parameters
+    ----------
+    epsilon : float, default = 1e-6
+        The regularization/trunction parameters for eigenvalues.
+
+    mode : str, default = 'regularize'
+        'regularize': regularize the eigenvalues by adding epsilon.
+        'trunc': truncate the eigenvalues by filtering out the eigenvalues below epsilon.
+
+    symmetrized : boolean, default = False
+        Whether to symmetrize time-correlation matrices or not. 
+    """
 
     def __init__(self, epsilon=1e-6, mode='regularize', symmetrized=False):
         super(VAMPLoss, self).__init__()
@@ -38,6 +52,26 @@ class VAMPLoss(nn.Module):
         return mean_score
     
 class DisLoss(nn.Module):
+    """ Compute dispersion loss.
+
+    Parameters
+    ----------
+    feat_dim : int
+        The dimension of the euclidean space where the latent hypersphere is embedded.
+        The dimension of latent hypersphere is (feat_dim-1).
+
+    n_states : int
+        Number of metastable states to be specified. 
+
+    device : torch.device
+        The device on which the torch modules are executed.
+
+    proto_update_factor : float, default = 0.5
+        The state center update factor.
+
+    scaling_temperature : float, default = 0.1
+        The scaling hyperparameter to compute dispersion loss. 
+    """
 
     def __init__(self, feat_dim, n_states, device, proto_update_factor=0.5, scaling_temperature=0.1):
         super(DisLoss, self).__init__()
@@ -84,6 +118,19 @@ class DisLoss(nn.Module):
         return mean_score
     
 class Prototypes(nn.Module):
+    """ Compute the prototypes (state center vectors). Used for evaluating validation data.
+
+    Parameters
+    ----------
+    n_states : int
+        Number of metastable states to be specified. 
+
+    device : torch.device
+        The device on which the torch modules are executed.
+
+    scaling_temperature : float, default = 0.1
+        The scaling hyperparameter to compute dispersion loss. 
+    """
 
     def __init__(self, n_states, device, scaling_temperature=0.1):
         super(Prototypes,self).__init__()
