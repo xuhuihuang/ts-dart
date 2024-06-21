@@ -1,14 +1,14 @@
 import numpy as np
 
 class Preprocessing:
+    """ Preprocess the original trajectories to create datasets for training.
+
+    Parameters
+    ----------
+    dtype : dtype, default = np.float32
+    """
 
     def __init__(self, dtype=np.float32):
-        """ Preprocess the original trajectories to create datasets for training.
-
-        Parameters
-        ----------
-        dtype : dtype, default = np.float32
-        """
 
         self._dtype = dtype
 
