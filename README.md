@@ -90,6 +90,7 @@ python -m pip install -U sphinx
 pip install sphinx-rtd-theme
 pip install nbconvert nbformat
 pip install sphinx-design
+cd docs
 make html
 ```
 You can also visit our [documentation online](https://bojunliu0818.github.io/ts-dart-doc/html/index.html)
