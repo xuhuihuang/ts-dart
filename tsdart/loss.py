@@ -31,7 +31,7 @@ class VAMPLoss(nn.Module):
         self._symmetrized = symmetrized
 
     def forward(self, data):
-        """ Compute VAMP2 loss.
+        """ Compute VAMP2 loss at every call.
 
         Parameters
         ----------
@@ -40,26 +40,40 @@ class VAMPLoss(nn.Module):
 
         Returns
         -------
-        VAMP2 loss
+        loss : torch.Tensor
+            VAMP-2 loss
         """
 
         assert len(data) == 2
 
         koopman = estimate_koopman_matrix(data[0], data[1], epsilon=self._epsilon, mode=self._mode, symmetrized=self._symmetrized)
         self._score = torch.pow(torch.norm(koopman, p='fro'), 2) + 1
+        loss = -self._score
 
-        return -self._score
+        return loss
     
     def save(self):
+        """ Save the VAMP2 score to the list."""
+
         with torch.no_grad():
             self._score_list.append(self._score)
         return self
 
     def clear(self):
+        """ Clear the list."""
+
         self._score_list = []
         return self
 
     def output_mean_score(self):
+        """ Output the average of recorded VAMP2 scores within the list.
+
+        Returns
+        -------
+        mean_score : torch.Tensor
+            The averaged VAMP-2 score
+        """
+
         mean_score = torch.mean(torch.stack(self._score_list))
         return mean_score
     
@@ -98,7 +112,7 @@ class DisLoss(nn.Module):
         self.scaling_temperature = scaling_temperature
     
     def forward(self, features, labels):
-        """ Compute dispersion loss.
+        """ Compute dispersion loss at every call.
 
         Parameters
         ----------
@@ -132,15 +146,27 @@ class DisLoss(nn.Module):
         return loss if not torch.isnan(loss) else 0
     
     def save(self):
+        """ Save the dispersion loss to the list."""
+
         with torch.no_grad():
             self._score_list.append(self._score)
         return self
 
     def clear(self):
+        """ Clear the list of recorded dispersion losses."""
+
         self._score_list = []
         return self
 
     def output_mean_score(self):
+        """ Output the average of recorded dispersion losses within the list.
+
+        Returns
+        -------
+        mean_score : torch.Tensor
+            The averaged dispersion loss
+        """
+
         mean_score = torch.mean(torch.stack(self._score_list))
         return mean_score
     
@@ -170,7 +196,7 @@ class Prototypes(nn.Module):
         self.scaling_temperature = scaling_temperature
 
     def forward(self, features, labels):
-        """ Compute dispersion loss.
+        """ Compute dispersion loss and state center vectors at every call.
 
         Parameters
         ----------
@@ -213,11 +239,21 @@ class Prototypes(nn.Module):
         return prototypes
 
     def clear(self):
+        """ Clear the lists of recorded state centers and dispersion losses."""
+
         self._proto_list = []
         self._disloss_list = []
         return self
 
     def output_mean_prototypes(self):
+        """ Output the average of recorded state centers within the list.
+
+        Returns
+        -------
+        mean_prototypes : torch.Tensor
+            The averaged state center vectors
+        """
+
         mean_prototypes = torch.mean(torch.stack(self._proto_list),dim=0)
         for i in range(self.n_states):
             if mean_prototypes.any() == 0:
@@ -226,5 +262,13 @@ class Prototypes(nn.Module):
         return mean_prototypes
     
     def output_mean_disloss(self):
+        """ Output the average of recorded dispersion losses within the score list.
+
+        Returns
+        -------
+        mean_dissloss : torch.Tensor
+            The averaged dispersion loss
+        """
+
         mean_disloss = torch.mean(torch.stack(self._disloss_list))
         return mean_disloss if not torch.isnan(mean_disloss) else 0

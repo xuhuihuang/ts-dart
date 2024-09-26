@@ -94,6 +94,10 @@ class TSDARTModel:
             'probs': the softmax probabilties to assign each conformation to a metastable state.
             'states': the metastable state assignments of each conformation.
             'hypersphere_embs': the hyperspherical embeddings of each conformation. 
+
+        Returns
+        -------
+        The transformed trajectories.
         """
 
         ### return_type: 'probs' or 'states' 'hypersphere_embs'
@@ -235,6 +239,17 @@ class TSDART:
         return np.array(self._validation_prototypes)
     
     def partial_fit(self, data):
+        """ Performs partial fit on one batch of data.
+
+        Parameters
+        ----------
+        data : tuple
+            The data containing the a batch of time-instantaneous and a batch of time-lagged data.
+
+        Returns
+        -------
+        self : TSDART
+        """
 
         batch_0, batch_1 = data[0], data[1]
         self._lobe.train()
@@ -259,6 +274,13 @@ class TSDART:
         return self
     
     def validate(self, val_data):
+        """ Evaluate the current model on validation data.
+
+        Parameters
+        ----------
+        val_data : tuple
+            The validation data containing the a batch of time-instantaneous and a batch of time-lagged data.
+        """
 
         batch_0, batch_1 = val_data[0], val_data[1]
         self._lobe.eval()
@@ -324,6 +346,7 @@ class TSDART:
         return self
     
     def fetch_model(self):
+        """ Yields the current model. """
 
         from copy import deepcopy
         lobe = deepcopy(self._lobe)

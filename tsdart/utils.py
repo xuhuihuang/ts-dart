@@ -2,6 +2,8 @@ import numpy as np
 import torch
 
 def set_random_seed(seed):
+    """ Set a random seed. """
+
     import random
     import os
     torch.manual_seed(seed)
