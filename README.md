@@ -83,6 +83,17 @@ Or
 sh ./ts-dart/scripts/train_tsdart.sh
 ```
 
+## Compiling Document Environment
+Once you have already installed ts-dart in your conda environment.
+```bash
+python -m pip install -U sphinx
+pip install sphinx-rtd-theme
+pip install nbconvert nbformat
+pip install pandoc
+pip install sphinx-design
+make html
+```
+
 ## More instructions 
 
 TS-DART refers to the preprint [10.26434/chemrxiv-2024-r8gjv](https://chemrxiv.org/engage/chemrxiv/article-details/65adf0b966c1381729fb4c11).
