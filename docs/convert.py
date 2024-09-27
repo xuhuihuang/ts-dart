@@ -31,19 +31,23 @@ def nb2rst(fname, outfile):
 if __name__ == '__main__':
 
     filelist = []
+    rootlist = []
     for root, dirname, filenames in os.walk(codedir):
         for fname in filenames:
             ext = os.path.splitext(fname)[-1]
+            pre = os.path.splitext(fname)[-2]
             if ext == ".ipynb":
                 filelist.append(os.path.join(root, fname))
+                rootlist.append(os.path.join(tgtdir, pre))
     print(f"Number of notebooks to convert: {len(filelist)}")
 
     pairlist = []
+    i=0
     for fpath in filelist:
         tgt_fpath = fpath.replace(".ipynb", ".rst")
-        tgt_fpath = tgt_fpath.replace(codedir, tgtdir)
+        tgt_fpath = tgt_fpath.replace(codedir, rootlist[i])
         pairlist.append((fpath, tgt_fpath))
+        i=i+1
 
-    # print(pairlist)
     for fpath, tgt_fpath in pairlist:
         nb2rst(fpath, tgt_fpath)

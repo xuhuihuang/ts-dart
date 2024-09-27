@@ -84,7 +84,7 @@ sh ./ts-dart/scripts/train_tsdart.sh
 ```
 
 ## Compiling Document Environment
-Once you have already installed ts-dart in your conda environment.
+Once you have already installed ts-dart in your conda environment. 
 ```bash
 python -m pip install -U sphinx
 pip install sphinx-rtd-theme
@@ -93,6 +93,7 @@ pip install sphinx-design
 cd docs
 make html
 ```
+(Warnings can be ignored!)
 You can also visit our [documentation online](https://bojunliu0818.github.io/ts-dart-doc/html/index.html)
 
 ## More instructions 

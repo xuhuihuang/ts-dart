@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Muller potential &mdash; TS-DART 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=8d563738"></script>
+        <script src="../../_static/doctools.js?v=9a2dae69"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TS-DART
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../chapters/intro.html">Brief intro</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../chapters/installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../chapters/tutorials.html">Tutorials</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../source/tsdart.html">tsdart package</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TS-DART</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Muller potential</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/_example/muller-example/muller-example.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import numpy as np
+import torch
+import torch.nn as nn
+from matplotlib import pyplot as plt
+
+from torch.utils.data.dataloader import DataLoader
+from torch.utils.data import random_split
+
+from tsdart.utils import set_random_seed
+from tsdart.loss import Prototypes
+from tsdart.model import TSDART, TSDARTLayer, TSDARTEstimator
+from tsdart.dataprocessing import Preprocessing
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>if torch.cuda.is_available():
+    device = torch.device(&#39;cuda&#39;)
+    print(&#39;cuda is available&#39;)
+else:
+    device = torch.device(&#39;cpu&#39;)
+    print(&#39;cpu&#39;)
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cpu</span>
+</pre></div>
+</div>
+<section id="muller-potential">
+<h1>Muller potential<a class="headerlink" href="#muller-potential" title="Link to this heading"></a></h1>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>A = np.array([-10,-5,-17/2,0.75])
+a = np.array([-1,-1,-6.5,0.7])
+b = np.array([0,0,11,0.6])
+c = np.array([-10,-10,-6.5,0.7])
+xbar = np.array([1,0,-0.5,-1])
+ybar = np.array([0,0.5,1.5,1])
+
+def V(x,y):
+    s = 0.
+    for i in range(4):
+        s += A[i]*np.exp(a[i]*(x-xbar[i])**2+b[i]*(x-xbar[i])*(y-ybar[i])+c[i]*(y-ybar[i])**2)
+    return s
+
+fig,ax = plt.subplots(1,1,figsize=(4,3))
+for axis in [&#39;top&#39;,&#39;bottom&#39;,&#39;left&#39;,&#39;right&#39;]:
+    ax.spines[axis].set_linewidth(2)
+ax.set_aspect(&#39;equal&#39;)
+x = np.arange(-1.7,1.2+0.01,0.01)
+y = np.arange(-0.35,2.1+0.01,0.01)
+xx,yy = np.meshgrid(x,y)
+z = V(xx.ravel(),yy.ravel()).reshape(len(y),-1)
+z = z - z.min()
+z = z*1/0.9 # temperature is 0.4.
+z = np.ma.masked_greater(z, 10)
+c = ax.contourf(x,y,z,cmap=&#39;rainbow&#39;,levels=20,zorder=1)
+ax.contour(x,y,z,levels=20,zorder=1,colors=&#39;black&#39;,alpha=0.2)
+cb = fig.colorbar(c)
+#ax.grid(True)
+ax.tick_params(axis=&quot;both&quot;,labelsize=12,direction=&#39;out&#39;,length=3.5,width=1.5)
+cb.ax.tick_params(labelsize=10,length=2.5,width=1.5)
+cb.set_label(&#39;free energy/kT&#39;,fontsize=12)
+
+ax.set_xlim(-1.5,1.15)
+ax.set_ylim(-0.3,2.1)
+
+ax.set_yticks([0,1,2])
+
+r=0.1
+g=0.1
+b=0.2
+ax.patch.set_facecolor((r,g,b,.15))
+
+ax.set_xlabel(&#39;x1&#39;,fontsize=12)
+ax.set_ylabel(&#39;x2&#39;,fontsize=12)
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Text</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s1">&#39;x2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../../_images/output_3_1.png" src="../../_images/output_3_1.png" />
+</section>
+<section id="create-dataset">
+<h1>Create dataset<a class="headerlink" href="#create-dataset" title="Link to this heading"></a></h1>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>data = np.load(&#39;../data/muller/muller.npy&#39;)
+
+pre = Preprocessing(dtype=np.float32)
+dataset = pre.create_dataset(lag_time=1,data=data)
+</pre></div>
+</div>
+</section>
+<section id="states-model">
+<h1>2 states model<a class="headerlink" href="#states-model" title="Link to this heading"></a></h1>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>set_random_seed(1)
+
+val = int(len(dataset)*0.10)
+train_data, val_data = torch.utils.data.random_split(dataset, [len(dataset)-val, val])
+
+loader_train = DataLoader(train_data, batch_size=1000, shuffle=True)
+loader_val = DataLoader(val_data, batch_size=len(val_data), shuffle=False)
+
+lobe = TSDARTLayer([2,20,20,20,10,2],n_states=2)
+lobe = lobe.to(device=device)
+### 50 epochs for fully optimization
+tsdart = TSDART(lobe = lobe, learning_rate = 1e-3, device = device, mode = &#39;regularize&#39;, beta=0.01, feat_dim=2, n_states=2, pretrain=50)
+tsdart_model = tsdart.fit(loader_train, n_epochs=100, validation_loader=loader_val).fetch_model()
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>tsdart_estimator = TSDARTEstimator(tsdart_model)
+ood_scores = tsdart_estimator.fit(data).ood_scores
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>A = np.array([-10,-5,-17/2,0.75])
+a = np.array([-1,-1,-6.5,0.7])
+b = np.array([0,0,11,0.6])
+c = np.array([-10,-10,-6.5,0.7])
+xbar = np.array([1,0,-0.5,-1])
+ybar = np.array([0,0.5,1.5,1])
+
+def V(x,y):
+    s = 0.
+    for i in range(4):
+        s += A[i]*np.exp(a[i]*(x-xbar[i])**2+b[i]*(x-xbar[i])*(y-ybar[i])+c[i]*(y-ybar[i])**2)
+    return s
+
+fig,ax = plt.subplots(1,1,figsize=(4,3))
+for axis in [&#39;top&#39;,&#39;bottom&#39;,&#39;left&#39;,&#39;right&#39;]:
+    ax.spines[axis].set_linewidth(2)
+ax.set_aspect(&#39;equal&#39;)
+x = np.arange(-1.7,1.2+0.01,0.01)
+y = np.arange(-0.35,2.1+0.01,0.01)
+xx,yy = np.meshgrid(x,y)
+z = V(xx.ravel(),yy.ravel()).reshape(len(y),-1)
+z = z - z.min()
+z = z*1/0.9 # temperature is 0.4.
+z = np.ma.masked_greater(z, 10)
+
+c = ax.scatter(data[:,0],data[:,1],c=ood_scores,cmap=&#39;coolwarm&#39;,s=1,alpha=1)
+cb = fig.colorbar(c)
+cb.ax.tick_params(labelsize=10,length=2.5,width=1.5)
+cb.set_label(&#39;ood scores&#39;,fontsize=12)
+
+ax.contour(x,y,z,levels=20,zorder=1,colors=&#39;black&#39;,alpha=1)
+
+ax.tick_params(axis=&quot;both&quot;,labelsize=12,direction=&#39;out&#39;,length=3.5,width=1.5)
+
+ax.set_xlim(-1.5,1.15)
+ax.set_ylim(-0.3,2.1)
+
+ax.set_yticks([0,1,2])
+
+r=0.1
+g=0.1
+b=0.2
+ax.patch.set_facecolor((r,g,b,.15))
+
+ax.set_xlabel(&#39;x1&#39;,fontsize=12)
+ax.set_ylabel(&#39;x2&#39;,fontsize=12)
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Text</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s1">&#39;x2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../../_images/output_9_1.png" src="../../_images/output_9_1.png" />
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>features = tsdart_model.transform(data,return_type=&#39;hypersphere_embs&#39;)
+state_centers = tsdart_estimator.fit(data).state_centers
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig,ax = plt.subplots(1,1,figsize=(4,3))
+for axis in [&#39;top&#39;,&#39;bottom&#39;,&#39;left&#39;,&#39;right&#39;]:
+    ax.spines[axis].set_linewidth(1)
+ax.set_aspect(&#39;equal&#39;)
+
+c = ax.scatter(features[:,0],features[:,1],c=ood_scores,cmap=&#39;coolwarm&#39;,s=1,alpha=1)
+cb = fig.colorbar(c)
+cb.ax.tick_params(labelsize=10,length=2.5,width=1.5)
+cb.set_label(&#39;ood scores&#39;,fontsize=12)
+
+ax.plot([0,state_centers[0,0]],[0,state_centers[0,1]],linewidth=2,color=&#39;black&#39;,linestyle=&#39;--&#39;)
+ax.plot([0,state_centers[1,0]],[0,state_centers[1,1]],linewidth=2,color=&#39;black&#39;,linestyle=&#39;--&#39;)
+
+ax.tick_params(axis=&quot;both&quot;,labelsize=12,direction=&#39;out&#39;,length=3.5,width=1.5)
+
+ax.set_xlim(-1.1,1.1)
+ax.set_ylim(-1.1,1.1)
+
+ax.set_xticks([-1,0,1])
+ax.set_yticks([-1,0,1])
+
+ax.set_xlabel(&#39;z1&#39;,fontsize=12)
+ax.set_ylabel(&#39;z2&#39;,fontsize=12)
+
+r=0.1
+g=0.1
+b=0.2
+ax.patch.set_facecolor((r,g,b,.15))
+</pre></div>
+</div>
+<img alt="../../_images/output_11_0.png" src="../../_images/output_11_0.png" />
+</section>
+<section id="id1">
+<h1>3 states model<a class="headerlink" href="#id1" title="Link to this heading"></a></h1>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>set_random_seed(1)
+
+val = int(len(dataset)*0.10)
+train_data, val_data = torch.utils.data.random_split(dataset, [len(dataset)-val, val])
+
+loader_train = DataLoader(train_data, batch_size=1000, shuffle=True)
+loader_val = DataLoader(val_data, batch_size=len(val_data), shuffle=False)
+
+lobe = TSDARTLayer([2,20,20,20,10,2],n_states=3)
+lobe = lobe.to(device=device)
+### 50 epochs for fully optimization
+tsdart = TSDART(lobe = lobe, learning_rate = 1e-3, device = device, mode = &#39;regularize&#39;, beta=0.01, feat_dim=2, n_states=3, pretrain=50)
+tsdart_model = tsdart.fit(loader_train, n_epochs=100, validation_loader=loader_val).fetch_model()
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>tsdart_estimator = TSDARTEstimator(tsdart_model)
+ood_scores = tsdart_estimator.fit(data).ood_scores
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>A = np.array([-10,-5,-17/2,0.75])
+a = np.array([-1,-1,-6.5,0.7])
+b = np.array([0,0,11,0.6])
+c = np.array([-10,-10,-6.5,0.7])
+xbar = np.array([1,0,-0.5,-1])
+ybar = np.array([0,0.5,1.5,1])
+
+def V(x,y):
+    s = 0.
+    for i in range(4):
+        s += A[i]*np.exp(a[i]*(x-xbar[i])**2+b[i]*(x-xbar[i])*(y-ybar[i])+c[i]*(y-ybar[i])**2)
+    return s
+
+fig,ax = plt.subplots(1,1,figsize=(4,3))
+for axis in [&#39;top&#39;,&#39;bottom&#39;,&#39;left&#39;,&#39;right&#39;]:
+    ax.spines[axis].set_linewidth(2)
+ax.set_aspect(&#39;equal&#39;)
+x = np.arange(-1.7,1.2+0.01,0.01)
+y = np.arange(-0.35,2.1+0.01,0.01)
+xx,yy = np.meshgrid(x,y)
+z = V(xx.ravel(),yy.ravel()).reshape(len(y),-1)
+z = z - z.min()
+z = z*1/0.9 # temperature is 0.4.
+z = np.ma.masked_greater(z, 10)
+
+c = ax.scatter(data[:,0],data[:,1],c=ood_scores,cmap=&#39;coolwarm&#39;,s=1,alpha=1)
+cb = fig.colorbar(c)
+cb.ax.tick_params(labelsize=10,length=2.5,width=1.5)
+cb.set_label(&#39;ood scores&#39;,fontsize=12)
+
+ax.contour(x,y,z,levels=20,zorder=1,colors=&#39;black&#39;,alpha=1)
+
+ax.tick_params(axis=&quot;both&quot;,labelsize=12,direction=&#39;out&#39;,length=3.5,width=1.5)
+
+ax.set_xlim(-1.5,1.15)
+ax.set_ylim(-0.3,2.1)
+
+ax.set_yticks([0,1,2])
+
+r=0.1
+g=0.1
+b=0.2
+ax.patch.set_facecolor((r,g,b,.15))
+
+ax.set_xlabel(&#39;x1&#39;,fontsize=12)
+ax.set_ylabel(&#39;x2&#39;,fontsize=12)
+</pre></div>
+</div>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Text</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s1">&#39;x2&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="../../_images/output_15_1.png" src="../../_images/output_15_1.png" />
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>features = tsdart_model.transform(data,return_type=&#39;hypersphere_embs&#39;)
+state_centers = tsdart_estimator.fit(data).state_centers
+</pre></div>
+</div>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig,ax = plt.subplots(1,1,figsize=(4,3))
+for axis in [&#39;top&#39;,&#39;bottom&#39;,&#39;left&#39;,&#39;right&#39;]:
+    ax.spines[axis].set_linewidth(1)
+ax.set_aspect(&#39;equal&#39;)
+
+c = ax.scatter(features[:,0],features[:,1],c=ood_scores,cmap=&#39;coolwarm&#39;,s=1,alpha=1)
+cb = fig.colorbar(c)
+cb.ax.tick_params(labelsize=10,length=2.5,width=1.5)
+cb.set_label(&#39;ood scores&#39;,fontsize=12)
+
+ax.plot([0,state_centers[0,0]],[0,state_centers[0,1]],linewidth=2,color=&#39;black&#39;,linestyle=&#39;--&#39;)
+ax.plot([0,state_centers[1,0]],[0,state_centers[1,1]],linewidth=2,color=&#39;black&#39;,linestyle=&#39;--&#39;)
+ax.plot([0,state_centers[2,0]],[0,state_centers[2,1]],linewidth=2,color=&#39;black&#39;,linestyle=&#39;--&#39;)
+
+ax.tick_params(axis=&quot;both&quot;,labelsize=12,direction=&#39;out&#39;,length=3.5,width=1.5)
+
+ax.set_xlim(-1.1,1.1)
+ax.set_ylim(-1.1,1.1)
+
+ax.set_xticks([-1,0,1])
+ax.set_yticks([-1,0,1])
+
+ax.set_xlabel(&#39;z1&#39;,fontsize=12)
+ax.set_ylabel(&#39;z2&#39;,fontsize=12)
+
+r=0.1
+g=0.1
+b=0.2
+ax.patch.set_facecolor((r,g,b,.15))
+</pre></div>
+</div>
+<img alt="../../_images/output_17_0.png" src="../../_images/output_17_0.png" />
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Bojun Liu.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
